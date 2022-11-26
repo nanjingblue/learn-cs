@@ -11,6 +11,8 @@
 #include <map>
 #include <io.h>
 #include <vector>
+#include <sstream>
+#include "response.h"
 
 namespace parser {
 
@@ -32,36 +34,29 @@ namespace parser {
         //文件信息，声明一个存储文件信息的结构体
         struct _finddata_t fileinfo{};
         std::string p;  //字符串，存放路径
-        if ((hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1)//若查找成功，则进入
-        {
+        if ((hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1) {
             do {
-                //如果是目录,迭代之（即文件夹内还有文件夹）
-                if ((fileinfo.attrib & _A_SUBDIR)) {
-                    //文件名不等于"."&&文件名不等于".."
-                    //.表示当前目录
-                    //..表示当前目录的父目录
-                    //判断时，两者都要忽略，不然就无限递归跳不出去了！
-//                    if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
-//                        getFiles(p.assign(path).append("\\").append(fileinfo.name), files);
-                }
-                    //如果不是,加入列表
-                else {
-//                    files.push_back(p.assign(path).append("\\").append(fileinfo.name));
+                if (!(fileinfo.attrib & _A_SUBDIR)) {
                     files.emplace_back(fileinfo.name);
                 }
             } while (_findnext(hFile, &fileinfo) == 0);
-            //_findclose函数结束查找
             _findclose(hFile);
         }
     }
 
-    std::string parseDir(std::string& body) {
-//        body = "C:\\Users\\nanjingblue\\Documents\\default\\Course\\Grid programming\\winsocket";
+    std::string handleDirCMD(std::string& body) {
         std::vector<std::string> fileList;
         getFiles(body, fileList);
+        std::string response;
         for (const auto& it : fileList) {
             std::cout << it << std::endl;
+            response = response + it + "\n";
         }
+        return response;
+    }
+
+    void parseUpload(std::string& body) {
+
     }
 
     void parseCommand(char* data) {
@@ -77,14 +72,26 @@ namespace parser {
         }
         std::transform(token.begin(), token.end(), token.begin(), ::toupper);
         std::string body = cmd.substr(token.length() + 1);
-        std::cout << body << std::endl;
         int choose = tokenCase[token];
         switch (choose) {
             case 0:
-                parseDir(body);
+                handleDirCMD(body);
+            case 1:
+                parseUpload(body);
             default:
                 return;
         }
+    }
+
+    Token getCommand(const char* data) {
+        std::istringstream ss(data);
+        std::string word;
+        ss >> word;
+        std::transform(word.begin(), word.end(), word.begin(), ::toupper);
+        if (word == "DIR" || word == "UPLOAD" || word == "DOWNLOAD") {
+            return word;
+        }
+        return "";
     }
 
 } // namespace parser
