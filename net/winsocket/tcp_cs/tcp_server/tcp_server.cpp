@@ -27,19 +27,60 @@ void start(SOCKET& clisd, SOCKET& lsd, sockaddr_in& server, sockaddr_in& caddr) 
         data[rc] = 0;
         printf("客户机数据：%s \n", data);
 
-        parser::Token token = parser::getCommand(data);
+        std::vector<std::string> v = parser::getCommand(data);
+        parser::Token token = v[0];
         int cmd = parser::tokenCase[token];
-        std::string rec(data);
-        std::string body = rec.substr(token.length() + 1);
         switch (cmd) {
-            case 0:
-                std::string response = parser::handleDirCMD(body);
+            case 0: {
+                std::string response = parser::handleDirCMD(v[1]);
                 std::cout << "response：" << response << std::endl;
                 DirResult dirResult(response.c_str());
                 rc = send(global::clisd, (char*)&dirResult, sizeof(DirResult), 0);
                 if (rc == SOCKET_ERROR) {
                     _error("send()");
                 }
+                break;
+            }
+            case 1: {
+
+                std::string filepath = v[1];
+                std::string filename;
+
+                for (auto i = filepath.length() - 1; i >= 0; i--) {
+                    if (filepath[i] == '/' || filepath[i] == '\\' || filepath[i] == ' ') {
+                        break;
+                    }
+                    filename = filepath[i] + filename;
+                }
+
+                Upload upload;
+                recv(clisd, (char*)&upload, sizeof(Upload), 0);
+                std::cout << "状态码：" << upload.status << std::endl;
+                if (upload.status != 200) {
+                    std::cout << "upload failed." << std::endl;
+                    break;
+                }
+
+                std::ofstream ofs;
+                ofs.open("./data/" + filename, std::ios::out|std::ios::binary);
+                if(!ofs.is_open()){
+                    std::cout<<"cant open output file."<< std::endl;
+                }
+                ofs << upload.file << std::endl;
+                std::cout<<"out to file success.\n"<< std::endl;
+                ofs.close();
+                std::cout << "上传成功" << std::endl;
+            }
+            case 2: {
+                std::string response = parser::handleDownLoadCMD(v[1]);
+                std::cout << response << std::endl;
+                DownloadResult downloadResult(200, response.c_str());
+                rc = send(clisd, (char*)&downloadResult, sizeof(DownloadResult), 0);
+                if (rc == SOCKET_ERROR) {
+                    _error("send()");
+                }
+                break;
+            }
         }
 
 //        char rdata[254];

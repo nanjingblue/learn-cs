@@ -32,21 +32,23 @@ struct DirResult:public DataHeader
 };
 
 
-struct Upload:public DataHeader
-{
-    Upload() : DataHeader() {
-        dataLength = sizeof(Dir);
+struct Upload:public DataHeader {
+    Upload() : DataHeader(){}
+    explicit Upload(int s, const char* data) : DataHeader() {
+        dataLength = sizeof(Upload);
+        status = s;
+        strcpy(file, data);
     }
-    char filename[1024]{};
     char file[4096]{};
 };
 
-struct Download:public DataHeader
-{
-    Download() : DataHeader() {
-        dataLength = sizeof(Dir);
+struct DownloadResult:public DataHeader {
+    DownloadResult() : DataHeader(){}
+    explicit DownloadResult(int s, const char* data) : DataHeader() {
+        dataLength = sizeof(DownloadResult);
+        status = s;
+        strcpy(file, data);
     }
-    char filename[1024]{};
     char file[4096]{};
 };
 

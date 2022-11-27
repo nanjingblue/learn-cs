@@ -7,4 +7,4 @@ link_libraries(ws2_32 wsock32)
 
 include_directories(../include)
 
-add_executable(tcp_server tcp_server.cpp ../include/parser.h ../include/file_helper.h)
+add_executable(tcp_server tcp_server.cpp ../include/parser.h)

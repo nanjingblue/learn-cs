@@ -12,6 +12,7 @@
 #include <io.h>
 #include <vector>
 #include <sstream>
+#include <fstream>
 #include "response.h"
 
 namespace parser {
@@ -55,6 +56,17 @@ namespace parser {
         return response;
     }
 
+    std::string handleDownLoadCMD(std::string& filepath) {
+        std::ifstream ifs(filepath, std::ios::in|std::ios::binary);
+        if (!ifs) {
+            std::cout << "can not read file: " << filepath << std::endl;
+        }
+        std::ostringstream buf;
+        char ch;
+        while(buf && ifs.get(ch)) buf.put(ch);
+        return buf.str();
+    }
+
     void parseUpload(std::string& body) {
 
     }
@@ -83,15 +95,17 @@ namespace parser {
         }
     }
 
-    Token getCommand(const char* data) {
+    std::vector<std::string> getCommand(const char* data) {
+        std::vector<std::string> v;
         std::istringstream ss(data);
         std::string word;
         ss >> word;
         std::transform(word.begin(), word.end(), word.begin(), ::toupper);
-        if (word == "DIR" || word == "UPLOAD" || word == "DOWNLOAD") {
-            return word;
+        v.push_back(word);
+        while (ss >> word) {
+            v.push_back(word);
         }
-        return "";
+        return v;
     }
 
 } // namespace parser
